@@ -43,6 +43,11 @@ class vector2d(object):
     def mod(self):
         return math.sqrt(self.x * self.x + self.y * self.y)
 
+    def normalize(self):
+        self.x = self.x / self.mod()
+        self.y = self.y / self.mod()
+        return self
+
     def __repr__(self):
         return "<vector2d({},{})>".format(self.x, self.y)
 
@@ -52,12 +57,14 @@ def angleBetween(v1, v2):
     return math.acos(dot / (v1.mod() * v2.mod()))
 
 
-def findVectorBetween(v1, angle):
-    v_a = vector2d(math.sin(math.asin(v1.x / v1.mod()) - angle * math.pi / 180.0),
-                   math.cos(math.acos(v1.y / v1.mod()) - angle * math.pi / 180.0))
-    v_b = vector2d(math.sin(math.asin(v1.x / v1.mod()) + angle * math.pi / 180.0),
-                   math.cos(math.acos(v1.y / v1.mod()) + angle * math.pi / 180.0))
-    return v_a, v_b
+def findVectorBetween(v1, angle, revert=True):
+    if revert:
+        tempAngle = -angle * math.pi / 180
+    else:
+        tempAngle = angle * math.pi / 180
+
+    return vector2d(v1.x * math.cos(tempAngle) - v1.y * math.sin(tempAngle),
+                    v1.y * math.cos(tempAngle) - v1.x * math.sin(tempAngle)).normalize()
 
 
 class Protractor(QtWidgets.QDialog):
