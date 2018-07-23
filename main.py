@@ -46,8 +46,9 @@ class vector2d(object):
         return math.sqrt(self.x * self.x + self.y * self.y)
 
     def normalize(self):
-        self.x = self.x / self.mod()
-        self.y = self.y / self.mod()
+        mod = self.mod()
+        self.x = self.x / mod
+        self.y = self.y / mod
         return self
 
     def __add__(self, vector):
@@ -82,17 +83,35 @@ def findVectorBetween(v1, angle, revert=True):
                     v1.y * math.cos(tempAngle) - v1.x * math.sin(tempAngle)).normalize()
 
 
+def _angle(begin, cross, end):
+    v1 = vector2d(begin.x() - cross.x(), begin.y() - cross.y())
+    v2 = vector2d(end.x() - cross.x(), end.y() - cross.y())
+
+    return math.degrees(angleBetween(v1, v2))
+
+
 def _get_point_in_half_angle(begin, cross, end):
     v1 = vector2d(begin.x() - cross.x(), begin.y() - cross.y())
     v2 = vector2d(end.x() - cross.x(), end.y() - cross.y())
+
+    # # 百度的公式 定比分点公式
+    # _multiper = v1.mod() / v2.mod()
+    #
+    # _x = (begin.x() + _multiper * end.x()) / (1 + _multiper)
+    # _y = (begin.y() + _multiper * end.y()) / (1 + _multiper)
+    #
+    # v = vector2d(_x - cross.x(), _y - cross.y())
+    # v.normalize()
+    # v = v*50
+    # return QtCore.QPoint(v.x+cross.x(), v.y+cross.y())
+
     v1.normalize()
     v2.normalize()
 
-    half_vector = v1 + v2
-    half_vector = half_vector*50.0
-    # half_vector.normalize()
-    # half_vector = half_vector * 50
-    return QtCore.QPoint(cross.x() + half_vector.x, cross.y() + half_vector.y)
+    v = v1 + v2
+    v.normalize()
+    v = v * 50
+    return QtCore.QPoint(v.x + cross.x(), v.y + cross.y())
 
 
 class Protractor(QtGui.QDialog):
@@ -156,9 +175,12 @@ class Protractor(QtGui.QDialog):
             painter.drawLine(current_pos, crossPos)
 
             _p = _get_point_in_half_angle(beginPos, crossPos, current_pos)
-            print(_p)
-            painter.drawEllipse(_p, 5, 5)
-            painter.drawLine(crossPos,_p)
+            # painter.drawEllipse(_p, 5, 5)
+            # painter.drawLine(crossPos,_p)
+            angle = _angle(beginPos, crossPos, current_pos)
+            painter.setPen(QtGui.QColor(251, 197, 49))  # 设置画笔和字体,然后绘制文本
+            painter.setFont(QtGui.QFont('Decorative', 15))
+            painter.drawText(_p, "Angle is {:.2f} degree".format(angle))
 
         if self.beginPos and self.crossPos and self.endPos:
             beginPos = self.mapFromGlobal(self.beginPos)
@@ -175,8 +197,13 @@ class Protractor(QtGui.QDialog):
             painter.drawEllipse(self.endPos, 2, 2)
             painter.drawLine(endPos, crossPos)
 
-            # _p = _get_point_in_half_angle(beginPos, crossPos, endPos)
-            # painter.drawEllipse(_p, 2, 2)
+            _p = _get_point_in_half_angle(beginPos, crossPos, endPos)
+            # painter.drawEllipse(_p, 5, 5)
+            # painter.drawLine(crossPos,_p)
+            angle = _angle(beginPos, crossPos, endPos)
+            painter.setPen(QtGui.QColor(251, 197, 49))  # 设置画笔和字体,然后绘制文本
+            painter.setFont(QtGui.QFont('Decorative', 15))
+            painter.drawText(_p, "Angle is {:.2f} degree".format(angle))
 
     def keyPressEvent(self, event):
         """
