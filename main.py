@@ -79,7 +79,8 @@ class Protractor(QtGui.QDialog):
                             QtCore.Qt.WindowStaysOnTopHint |
                             QtCore.Qt.CustomizeWindowHint |
                             QtCore.Qt.Tool)
-        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        # self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setWindowOpacity(0.05)
         self.setCursor(QtCore.Qt.CrossCursor)
         self.setMouseTracking(True)
 
@@ -100,26 +101,42 @@ class Protractor(QtGui.QDialog):
         painter = QtGui.QPainter(self)
 
         current_pos = self.mapFromGlobal(QtGui.QCursor.pos())
-        # if self.beginPos:
-        #     # 画个点
-        #     beginPos = self.mapFromGlobal(self.beginPos)
-        #     painter.setPen(QtGui.QColor(0, 0, 0))
-        #     painter.setBrush(QtCore.Qt.red)
-        #     painter.drawEllipse(beginPos, 2, 2)
-        #     painter.drawLine(current_pos, beginPos)
-        #
-        #     if self.crossPos:
-        #         crossPos = self.mapFromGlobal(self.crossPos)
-        #         painter.drawEllipse(crossPos, 2, 2)
-        #         painter.drawLine(crossPos, beginPos)
-        #         painter.drawLine(current_pos, crossPos)
-        #
-        #         if self.endPos:
-        #             endPos = self.mapFromGlobal(self.endPos)
-        #             painter.drawEllipse(self.endPos, 2, 2)
-        #             painter.drawLine(endPos, crossPos)
+        if self.beginPos and not self.crossPos and not self.endPos:
+            # 画个点
+            beginPos = self.mapFromGlobal(self.beginPos)
+            painter.setPen(QtGui.QColor(0, 0, 0))
+            painter.setBrush(QtCore.Qt.red)
+            painter.drawEllipse(beginPos, 2, 2)
+            painter.drawLine(current_pos, beginPos)
 
-        print(self.beginPos, self.crossPos, self.endPos)
+        if self.beginPos and self.crossPos and not self.endPos:
+            beginPos = self.mapFromGlobal(self.beginPos)
+            crossPos = self.mapFromGlobal(self.crossPos)
+
+            painter.setPen(QtGui.QColor(0, 0, 0))
+            painter.setBrush(QtCore.Qt.red)
+            painter.drawEllipse(beginPos, 2, 2)
+            painter.drawLine(crossPos, beginPos)
+
+            painter.drawEllipse(crossPos, 2, 2)
+            painter.drawLine(current_pos, crossPos)
+
+        if self.beginPos and self.crossPos and self.endPos:
+            beginPos = self.mapFromGlobal(self.beginPos)
+            crossPos = self.mapFromGlobal(self.crossPos)
+            endPos = self.mapFromGlobal(self.endPos)
+
+            painter.setPen(QtGui.QColor(0, 0, 0))
+            painter.setBrush(QtCore.Qt.red)
+            painter.drawEllipse(beginPos, 2, 2)
+            painter.drawLine(crossPos, beginPos)
+
+            painter.drawEllipse(crossPos, 2, 2)
+
+            painter.drawEllipse(self.endPos, 2, 2)
+            painter.drawLine(endPos, crossPos)
+
+            # print(self.beginPos, self.crossPos, self.endPos)
 
     def keyPressEvent(self, event):
         """
