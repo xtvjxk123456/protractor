@@ -73,14 +73,15 @@ class Protractor(QtGui.QDialog):
     def __init__(self, parent=None):
         super(Protractor, self).__init__(parent)
 
-        self._opacity = 1
-
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint |
                             QtCore.Qt.WindowStaysOnTopHint |
                             QtCore.Qt.CustomizeWindowHint |
                             QtCore.Qt.Tool)
-        # self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-        self.setWindowOpacity(0.05)
+        # 设置透明背景，在本例中必须保证有一定的颜色，否则会成为全透明，geometry可能就不对劲了
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        # self.setWindowOpacity(0.2)
+        # setWindowOpacity会影响全部的整体，不是合适的方法
         self.setCursor(QtCore.Qt.CrossCursor)
         self.setMouseTracking(True)
 
@@ -99,6 +100,12 @@ class Protractor(QtGui.QDialog):
         Paint event
         """
         painter = QtGui.QPainter(self)
+        painter.setRenderHint(painter.Antialiasing)
+
+        painter.fillRect(self.rect(), QtGui.QColor(0, 0, 0, 1))
+        # fillRect 不错，可以绘制背景，将alpha 设置为不为0的值即可
+        # painter.setCompositionMode(painter.CompositionMode_Source)
+        # 合成模式貌似对本例没啥作用
 
         current_pos = self.mapFromGlobal(QtGui.QCursor.pos())
         if self.beginPos and not self.crossPos and not self.endPos:
@@ -207,5 +214,5 @@ class Protractor(QtGui.QDialog):
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     do = Protractor()
-    do.exec_()
+    do.show()
     sys.exit(app.exec_())
