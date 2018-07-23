@@ -50,13 +50,26 @@ class vector2d(object):
         self.y = self.y / self.mod()
         return self
 
+    def __add__(self, vector):
+        if isinstance(vector, vector2d):
+            return vector2d(self.x + vector.x, self.y + vector.y)
+        else:
+            raise TypeError("can not add with{}".format(vector))
+
+    def __mul__(self, value):
+        if isinstance(value, (int, float)):
+            return vector2d(self.x * value, self.y * value)
+        else:
+            raise TypeError("can not mul with{}".format(value))
+
     def __repr__(self):
         return "<vector2d({},{})>".format(self.x, self.y)
 
 
 def angleBetween(v1, v2):
     dot = v1.x * v2.x + v1.y * v2.y
-    return math.degrees(math.acos(dot / (v1.mod() * v2.mod())))
+    return math.acos(dot / (v1.mod() * v2.mod()))
+    # 弧度
 
 
 def findVectorBetween(v1, angle, revert=True):
@@ -69,11 +82,17 @@ def findVectorBetween(v1, angle, revert=True):
                     v1.y * math.cos(tempAngle) - v1.x * math.sin(tempAngle)).normalize()
 
 
-def _angle(begin, cross, end):
-    # qt空间到普通左边空间的转换
-    v1 = vector2d(cross.x() - begin.x(), -cross.y() + begin.y())
-    v2 = vector2d(cross.x() - end.x(), -cross.y() + end.y())
-    return angleBetween(v1, v2)
+def _get_point_in_half_angle(begin, cross, end):
+    v1 = vector2d(begin.x() - cross.x(), begin.y() - cross.y())
+    v2 = vector2d(end.x() - cross.x(), end.y() - cross.y())
+    v1.normalize()
+    v2.normalize()
+
+    half_vector = v1 + v2
+    half_vector = half_vector*50.0
+    # half_vector.normalize()
+    # half_vector = half_vector * 50
+    return QtCore.QPoint(cross.x() + half_vector.x, cross.y() + half_vector.y)
 
 
 class Protractor(QtGui.QDialog):
@@ -114,13 +133,13 @@ class Protractor(QtGui.QDialog):
         # painter.setCompositionMode(painter.CompositionMode_Source)
         # 合成模式貌似对本例没啥作用
 
-        current_pos = self.mapFromGlobal(QtGui.QCursor.pos())
         if self.beginPos and not self.crossPos and not self.endPos:
             # 画个点
             beginPos = self.mapFromGlobal(self.beginPos)
             painter.setPen(QtGui.QColor(0, 0, 0))
             painter.setBrush(QtCore.Qt.red)
             painter.drawEllipse(beginPos, 2, 2)
+            current_pos = self.mapFromGlobal(QtGui.QCursor.pos())
             painter.drawLine(current_pos, beginPos)
 
         if self.beginPos and self.crossPos and not self.endPos:
@@ -133,9 +152,13 @@ class Protractor(QtGui.QDialog):
             painter.drawLine(crossPos, beginPos)
 
             painter.drawEllipse(crossPos, 2, 2)
+            current_pos = self.mapFromGlobal(QtGui.QCursor.pos())
             painter.drawLine(current_pos, crossPos)
 
-            # print(_angle(beginPos, crossPos, current_pos))
+            _p = _get_point_in_half_angle(beginPos, crossPos, current_pos)
+            print(_p)
+            painter.drawEllipse(_p, 5, 5)
+            painter.drawLine(crossPos,_p)
 
         if self.beginPos and self.crossPos and self.endPos:
             beginPos = self.mapFromGlobal(self.beginPos)
@@ -152,7 +175,8 @@ class Protractor(QtGui.QDialog):
             painter.drawEllipse(self.endPos, 2, 2)
             painter.drawLine(endPos, crossPos)
 
-            # print( _angle(beginPos, crossPos, endPos))
+            # _p = _get_point_in_half_angle(beginPos, crossPos, endPos)
+            # painter.drawEllipse(_p, 2, 2)
 
     def keyPressEvent(self, event):
         """
