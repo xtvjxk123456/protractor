@@ -56,7 +56,7 @@ class vector2d(object):
 
 def angleBetween(v1, v2):
     dot = v1.x * v2.x + v1.y * v2.y
-    return math.acos(dot / (v1.mod() * v2.mod()))
+    return math.degrees(math.acos(dot / (v1.mod() * v2.mod())))
 
 
 def findVectorBetween(v1, angle, revert=True):
@@ -67,6 +67,13 @@ def findVectorBetween(v1, angle, revert=True):
 
     return vector2d(v1.x * math.cos(tempAngle) - v1.y * math.sin(tempAngle),
                     v1.y * math.cos(tempAngle) - v1.x * math.sin(tempAngle)).normalize()
+
+
+def _angle(begin, cross, end):
+    # qt空间到普通左边空间的转换
+    v1 = vector2d(cross.x() - begin.x(), -cross.y() + begin.y())
+    v2 = vector2d(cross.x() - end.x(), -cross.y() + end.y())
+    return angleBetween(v1, v2)
 
 
 class Protractor(QtGui.QDialog):
@@ -128,6 +135,8 @@ class Protractor(QtGui.QDialog):
             painter.drawEllipse(crossPos, 2, 2)
             painter.drawLine(current_pos, crossPos)
 
+            # print(_angle(beginPos, crossPos, current_pos))
+
         if self.beginPos and self.crossPos and self.endPos:
             beginPos = self.mapFromGlobal(self.beginPos)
             crossPos = self.mapFromGlobal(self.crossPos)
@@ -143,7 +152,7 @@ class Protractor(QtGui.QDialog):
             painter.drawEllipse(self.endPos, 2, 2)
             painter.drawLine(endPos, crossPos)
 
-            # print(self.beginPos, self.crossPos, self.endPos)
+            # print( _angle(beginPos, crossPos, endPos))
 
     def keyPressEvent(self, event):
         """
