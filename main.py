@@ -1,8 +1,10 @@
 # coding:utf-8
 from __future__ import division
 import math
+import sys
 
-from Qt import QtWidgets, QtGui, QtCompat, QtCore
+import PySide.QtGui as QtGui
+import PySide.QtCore as QtCore
 
 
 class vector2d(object):
@@ -67,7 +69,7 @@ def findVectorBetween(v1, angle, revert=True):
                     v1.y * math.cos(tempAngle) - v1.x * math.sin(tempAngle)).normalize()
 
 
-class Protractor(QtWidgets.QDialog):
+class Protractor(QtGui.QDialog):
     def __init__(self, parent=None):
         super(Protractor, self).__init__(parent)
 
@@ -85,46 +87,39 @@ class Protractor(QtWidgets.QDialog):
         desktop.resized.connect(self._fit_screen_geometry)
         desktop.screenCountChanged.connect(self._fit_screen_geometry)
 
+        self.beginPos = None
+        self.crossPos = None
+        self.endPos = None
+
+        self._fit_screen_geometry()
+
     def paintEvent(self, event):
         """
         Paint event
         """
-        # Convert click and current mouse positions to local space.
-        mouse_pos = self.mapFromGlobal(QtGui.QCursor.pos())
-        click_pos = None
-        if self._click_pos is not None:
-            click_pos = self.mapFromGlobal(self._click_pos)
-
         painter = QtGui.QPainter(self)
 
-        # Draw background. Aside from aesthetics, this makes the full
-        # tool region accept mouse events.
-        painter.setBrush(QtGui.QColor(0, 0, 0, self._opacity))
-        painter.setPen(QtCore.Qt.NoPen)
-        painter.drawRect(event.rect())
+        current_pos = self.mapFromGlobal(QtGui.QCursor.pos())
+        # if self.beginPos:
+        #     # 画个点
+        #     beginPos = self.mapFromGlobal(self.beginPos)
+        #     painter.setPen(QtGui.QColor(0, 0, 0))
+        #     painter.setBrush(QtCore.Qt.red)
+        #     painter.drawEllipse(beginPos, 2, 2)
+        #     painter.drawLine(current_pos, beginPos)
+        #
+        #     if self.crossPos:
+        #         crossPos = self.mapFromGlobal(self.crossPos)
+        #         painter.drawEllipse(crossPos, 2, 2)
+        #         painter.drawLine(crossPos, beginPos)
+        #         painter.drawLine(current_pos, crossPos)
+        #
+        #         if self.endPos:
+        #             endPos = self.mapFromGlobal(self.endPos)
+        #             painter.drawEllipse(self.endPos, 2, 2)
+        #             painter.drawLine(endPos, crossPos)
 
-        # Clear the capture area
-        if click_pos is not None:
-            capture_rect = QtCore.QRect(click_pos, mouse_pos)
-            painter.setCompositionMode(QtGui.QPainter.CompositionMode_Clear)
-            painter.drawRect(capture_rect)
-            painter.setCompositionMode(QtGui.QPainter.CompositionMode_SourceOver)
-
-        pen = QtGui.QPen(QtGui.QColor(255, 255, 255, 64), 1, QtCore.Qt.DotLine)
-        painter.setPen(pen)
-
-        # Draw cropping markers at click position
-        if click_pos is not None:
-            painter.drawLine(event.rect().left(), click_pos.y(),
-                             event.rect().right(), click_pos.y())
-            painter.drawLine(click_pos.x(), event.rect().top(),
-                             click_pos.x(), event.rect().bottom())
-
-        # Draw cropping markers at current mouse position
-        painter.drawLine(event.rect().left(), mouse_pos.y(),
-                         event.rect().right(), mouse_pos.y())
-        painter.drawLine(mouse_pos.x(), event.rect().top(),
-                         mouse_pos.x(), event.rect().bottom())
+        print(self.beginPos, self.crossPos, self.endPos)
 
     def keyPressEvent(self, event):
         """
@@ -151,37 +146,37 @@ class Protractor(QtWidgets.QDialog):
         """
         if event.button() == QtCore.Qt.LeftButton:
             # Begin click drag operation
-            self._click_pos = event.globalPos()
+            if not self.beginPos:
+                self.beginPos = event.globalPos()
+            elif not self.crossPos:
+                self.crossPos = event.globalPos()
+            elif not self.endPos:
+                self.endPos = event.globalPos()
+            else:
+                self.beginPos = event.globalPos()
+                self.crossPos = None
+                self.endPos = None
 
     def mouseReleaseEvent(self, event):
         """
         Mouse release event
         """
-        if event.button() == QtCore.Qt.LeftButton and self._click_pos is not None:
-            # End click drag operation and commit the current capture rect
-            self._capture_rect = QtCore.QRect(self._click_pos,
-                                              event.globalPos()).normalized()
-            self._click_pos = None
+        # if event.button() == QtCore.Qt.LeftButton and self._click_pos is not None:
+        #     # End click drag operation and commit the current capture rect
+        #     self._capture_rect = QtCore.QRect(self._click_pos,
+        #                                       event.globalPos()).normalized()
+        #     self._click_pos = None
+        # self.close()
+        pass
+
+    def mouseDoubleClickEvent(self, event):
         self.close()
 
     def mouseMoveEvent(self, event):
         """
         Mouse move event
         """
-        self.repaint()
-
-    def showEvent(self, event):
-        """
-        Show event
-        """
-        self._fit_screen_geometry()
-        # Start fade in animation
-        fade_anim = QtCore.QPropertyAnimation(self, "_opacity_anim_prop", self)
-        fade_anim.setStartValue(self._opacity)
-        fade_anim.setEndValue(127)
-        fade_anim.setDuration(300)
-        fade_anim.setEasingCurve(QtCore.QEasingCurve.OutCubic)
-        fade_anim.start(QtCore.QAbstractAnimation.DeleteWhenStopped)
+        self.update()
 
     def _fit_screen_geometry(self):
         # Compute the union of all screen geometries, and resize to fit.
@@ -190,3 +185,10 @@ class Protractor(QtWidgets.QDialog):
         for i in range(desktop.screenCount()):
             workspace_rect = workspace_rect.united(desktop.screenGeometry(i))
         self.setGeometry(workspace_rect)
+
+
+if __name__ == "__main__":
+    app = QtGui.QApplication(sys.argv)
+    do = Protractor()
+    do.exec_()
+    sys.exit(app.exec_())
