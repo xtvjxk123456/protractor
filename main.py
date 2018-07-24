@@ -118,13 +118,14 @@ class Protractor(QtGui.QDialog):
     def __init__(self, parent=None):
         super(Protractor, self).__init__(parent)
 
+        self.setObjectName("Protractor")
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint |
                             QtCore.Qt.WindowStaysOnTopHint |
                             QtCore.Qt.CustomizeWindowHint |
                             QtCore.Qt.Tool)
         # 设置透明背景，在本例中必须保证有一定的颜色，否则会成为全透明，geometry可能就不对劲了
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        # self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         # self.setWindowOpacity(0.2)
         # setWindowOpacity会影响全部的整体，不是合适的方法
         self.setCursor(QtCore.Qt.CrossCursor)
@@ -144,7 +145,8 @@ class Protractor(QtGui.QDialog):
         """
         Paint event
         """
-        painter = QtGui.QPainter(self)
+        painter = QtGui.QPainter()
+        painter.begin(self)
         painter.setRenderHint(painter.Antialiasing)
 
         painter.fillRect(self.rect(), QtGui.QColor(0, 0, 0, 1))
@@ -152,33 +154,46 @@ class Protractor(QtGui.QDialog):
         # painter.setCompositionMode(painter.CompositionMode_Source)
         # 合成模式貌似对本例没啥作用
 
+        normalLinePen = QtGui.QPen(QtGui.QColor(255, 195, 18), 2, )
+        normalPointPen = QtGui.QPen(QtCore.Qt.red, 3, )
+        unrealLinePen = QtGui.QPen(QtGui.QColor(255, 195, 18), 2, QtCore.Qt.DashDotLine)
+
         if self.beginPos and not self.crossPos and not self.endPos:
             # 画个点
             beginPos = self.mapFromGlobal(self.beginPos)
-            painter.setPen(QtGui.QColor(0, 0, 0))
-            painter.setBrush(QtCore.Qt.red)
+            # painter.setPen(QtGui.QColor(0, 0, 0))
+            # painter.setBrush(QtCore.Qt.red)
+            painter.setPen(normalPointPen)
             painter.drawEllipse(beginPos, 2, 2)
             current_pos = self.mapFromGlobal(QtGui.QCursor.pos())
+            painter.setPen(normalLinePen)
             painter.drawLine(current_pos, beginPos)
 
         if self.beginPos and self.crossPos and not self.endPos:
             beginPos = self.mapFromGlobal(self.beginPos)
             crossPos = self.mapFromGlobal(self.crossPos)
 
-            painter.setPen(QtGui.QColor(0, 0, 0))
-            painter.setBrush(QtCore.Qt.red)
+            # painter.setPen(QtGui.QColor(0, 0, 0))
+            # painter.setBrush(QtCore.Qt.red)
+            painter.setPen(normalPointPen)
             painter.drawEllipse(beginPos, 2, 2)
+            painter.setPen(normalLinePen)
             painter.drawLine(crossPos, beginPos)
 
+            painter.setPen(normalPointPen)
             painter.drawEllipse(crossPos, 2, 2)
             current_pos = self.mapFromGlobal(QtGui.QCursor.pos())
+
+            originPen = painter.pen()
+            painter.setPen(unrealLinePen)
             painter.drawLine(current_pos, crossPos)
+            painter.setPen(originPen)
 
             _p = _get_point_in_half_angle(beginPos, crossPos, current_pos)
             # painter.drawEllipse(_p, 5, 5)
             # painter.drawLine(crossPos,_p)
             angle = _angle(beginPos, crossPos, current_pos)
-            painter.setPen(QtGui.QColor(251, 197, 49))  # 设置画笔和字体,然后绘制文本
+            painter.setPen(QtGui.QColor(196, 229, 56))  # 设置画笔和字体,然后绘制文本
             painter.setFont(QtGui.QFont('Decorative', 15))
             painter.drawText(_p, "Angle is {:.2f} degree".format(angle))
 
@@ -187,23 +202,29 @@ class Protractor(QtGui.QDialog):
             crossPos = self.mapFromGlobal(self.crossPos)
             endPos = self.mapFromGlobal(self.endPos)
 
-            painter.setPen(QtGui.QColor(0, 0, 0))
-            painter.setBrush(QtCore.Qt.red)
+            # painter.setPen(QtGui.QColor(0, 0, 0))
+            # painter.setBrush(QtCore.Qt.red)
+            painter.setPen(normalPointPen)
             painter.drawEllipse(beginPos, 2, 2)
+            painter.setPen(normalLinePen)
             painter.drawLine(crossPos, beginPos)
 
+            painter.setPen(normalPointPen)
             painter.drawEllipse(crossPos, 2, 2)
 
             painter.drawEllipse(self.endPos, 2, 2)
+            painter.setPen(normalLinePen)
             painter.drawLine(endPos, crossPos)
 
             _p = _get_point_in_half_angle(beginPos, crossPos, endPos)
             # painter.drawEllipse(_p, 5, 5)
             # painter.drawLine(crossPos,_p)
             angle = _angle(beginPos, crossPos, endPos)
-            painter.setPen(QtGui.QColor(251, 197, 49))  # 设置画笔和字体,然后绘制文本
+            painter.setPen(QtGui.QColor(196, 229, 56))  # 设置画笔和字体,然后绘制文本
             painter.setFont(QtGui.QFont('Decorative', 15))
             painter.drawText(_p, "Angle is {:.2f} degree".format(angle))
+
+        painter.end()
 
     def keyPressEvent(self, event):
         """
@@ -255,6 +276,7 @@ class Protractor(QtGui.QDialog):
 
     def mouseDoubleClickEvent(self, event):
         self.close()
+        self.deleteLater()
 
     def mouseMoveEvent(self, event):
         """
